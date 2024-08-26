@@ -5,7 +5,9 @@ controllers:
     type: attribute
 
 # config/routes.yaml
+# api_login_check:
+#     path: /api/login
+#     controller: App\Controller\SecurityController::login
+#     methods: [POST]
 api_login_check:
-    path: /api/login
-    controller: App\Controller\SecurityController::login
-    methods: [POST]
+    path: /api/login_check
