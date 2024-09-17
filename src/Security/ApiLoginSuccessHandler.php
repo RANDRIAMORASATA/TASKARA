@@ -12,6 +12,6 @@ class ApiLoginSuccessHandler implements \Symfony\Component\Security\Http\Authent
     public function onAuthenticationSuccess(\Symfony\Component\HttpFoundation\Request $request, \Symfony\Component\Security\Core\Authentication\Token\TokenInterface $token): \Symfony\Component\HttpFoundation\JsonResponse
     {
         // Return a success response
-        return new \Symfony\Component\HttpFoundation\JsonResponse(['status' => 'success', 'message' => 'Login successful'], \Symfony\Component\HttpFoundation\Response::HTTP_OK);
+        return new \Symfony\Component\HttpFoundation\JsonResponse(['status' => 'success', 'message' => 'Login successfullllll'], \Symfony\Component\HttpFoundation\Response::HTTP_OK);
     }
 }

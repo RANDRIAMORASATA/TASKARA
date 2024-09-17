@@ -24,7 +24,7 @@ class UserController extends AbstractController
         $users = $userRepository->findAllUsers();
         return $this->json(['users' => $users]);
     }
-    
+
     #[Route('/user/{_id_user}', name: 'get_user', methods: ['GET'])]
     public function getOneUser(string $_id_user, UserRepository $userRepository): Response
     {
@@ -35,115 +35,116 @@ class UserController extends AbstractController
         return $this->json(['user' => $user]);
     }
 
-   /**User create */
-   
-   #[Route('/user', name: 'create_user', methods: ['POST'])]
-   public function createUser(
-       Request $request, 
-       UserRepository $userRepository,
-       ProjectRepository $projectRepository,
-       TaskRepository $taskRepository,
-       EntityManagerInterface $entityManager, 
-       ValidatorInterface $validator, 
-       UserPasswordHasherInterface $passwordHasher
-   ): Response {
-       // Log all request parameters
-       $data = $request->request->all();
-       error_log("Request data: " . json_encode($data));
-   
-       $user = new User();
-       $id_user = $request->request->get('_id_user', uniqid());
-       $user->setIdUser($id_user);
-   
-       // Handle projects and tasks
-       $projectIds = $request->request->get('projects');
-       $taskIds = $request->request->get('tasks');
-   
-       // Ensure these are arrays
-       if (!is_array($projectIds)) {
-           $projectIds = [];
-       }
-   
-       if (!is_array($taskIds)) {
-           $taskIds = [];
-       }
-   
-       // Process projects
-       foreach ($projectIds as $projectId) {
-           $project = $projectRepository->find($projectId);
-           if ($project) {
-               $user->addProjects($project);
-           }
-       }
-   
-       // Process tasks
-       foreach ($taskIds as $taskId) {
-           $task = $taskRepository->find($taskId);
-           if ($task) {
-               $user->addTasks($task);
-           }
-       }
-           
-       $name_user = $request->request->get('name_user');
-       if (empty($name_user)) {
-           return $this->json(['error' => 'Name is required'], Response::HTTP_BAD_REQUEST);
-       }
-       $user->setNameUser($name_user);
-   
-       $email = $request->request->get('email');
-       if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-           return $this->json(['error' => 'Valid email is required'], Response::HTTP_BAD_REQUEST);
-       }
-       $user->setEmail($email);
-   
-       $mdp = $request->request->get('mdp');
-       if (empty($mdp)) {
-           return $this->json(['error' => 'Password is required'], Response::HTTP_BAD_REQUEST);
-       }
-   
-       // Hash the password
-       $confirm_mdp = $request->request->get('confirm_mdp');
-       if ($mdp !== $confirm_mdp) {
-           return $this->json(['error' => 'Passwords do not match'], Response::HTTP_BAD_REQUEST);
-       }
-       $user->setMdp($passwordHasher->hashPassword($user, $mdp));
-   
-       $infos_user = $request->request->get('infos_user');
-       $user->setInfos_user($infos_user);
-   
-       // Validation
-       $errors = $validator->validate($user);
-       if (count($errors) > 0) {
-           $errorsArray = [];
-           foreach ($errors as $error) {
-               $errorsArray[] = $error->getMessage();
-           }
-           return $this->json(['errors' => $errorsArray], Response::HTTP_BAD_REQUEST);
-       }
-   
-       try {
-           $userRepository->saveUser($user);
-       } catch (\Exception $e) {
-           error_log("Error: " . $e->getMessage());
-           return $this->json(['error' => 'An error occurred while creating the user'], Response::HTTP_INTERNAL_SERVER_ERROR);
-       }
-   
-       return $this->json([
-           'message' => 'User created successfully',
-           'user' => $user
-       ], Response::HTTP_CREATED);
-   }
-   
+    /**User create */
 
-   
-   
+    #[Route('/user', name: 'create_user', methods: ['POST'])]
+    public function createUser(
+        Request $request,
+        UserRepository $userRepository,
+        ProjectRepository $projectRepository,
+        TaskRepository $taskRepository,
+        EntityManagerInterface $entityManager,
+        ValidatorInterface $validator,
+        UserPasswordHasherInterface $passwordHasher
+    ): Response {
+        // Log all request parameters
+        $data = $request->request->all();
+        error_log("Request data: " . json_encode($data));
+
+        $user = new User();
+        $id_user = $request->request->get('_id_user', uniqid());
+        $user->setIdUser($id_user);
+
+        // Handle projects and tasks
+        $projectIds = $request->request->get('projects');
+        $taskIds = $request->request->get('tasks');
+
+        // Ensure these are arrays
+        if (!is_array($projectIds)) {
+            $projectIds = [];
+        }
+
+        if (!is_array($taskIds)) {
+            $taskIds = [];
+        }
+
+        // Process projects
+        foreach ($projectIds as $projectId) {
+            $project = $projectRepository->find($projectId);
+            if ($project) {
+                $user->addProjects($project);
+            }
+        }
+
+        // Process tasks
+        foreach ($taskIds as $taskId) {
+            $task = $taskRepository->find($taskId);
+            if ($task) {
+                $user->addTasks($task);
+            }
+        }
+
+        $name_user = $request->request->get('name_user');
+        error_log('Received name_user: ' . $name_user);
+        if (empty($name_user)) {
+            return $this->json(['error' => 'Name is required'], Response::HTTP_BAD_REQUEST);
+        }
+        $user->setNameUser($name_user);
+
+        $email = $request->request->get('email');
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $this->json(['error' => 'Valid email is required'], Response::HTTP_BAD_REQUEST);
+        }
+        $user->setEmail($email);
+
+        $mdp = $request->request->get('mdp');
+        if (empty($mdp)) {
+            return $this->json(['error' => 'Password is required'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Hash the password
+        $confirm_mdp = $request->request->get('confirm_mdp');
+        if ($mdp !== $confirm_mdp) {
+            return $this->json(['error' => 'Passwords do not match'], Response::HTTP_BAD_REQUEST);
+        }
+        $user->setPassword($passwordHasher->hashPassword($user, $mdp));
+
+        $infos_user = $request->request->get('infos_user');
+        $user->setInfos_user($infos_user);
+
+        // Validation
+        $errors = $validator->validate($user);
+        if (count($errors) > 0) {
+            $errorsArray = [];
+            foreach ($errors as $error) {
+                $errorsArray[] = $error->getMessage();
+            }
+            return $this->json(['errors' => $errorsArray], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $userRepository->saveUser($user);
+        } catch (\Exception $e) {
+            error_log("Error: " . $e->getMessage());
+            return $this->json(['error' => 'An error occurred while creating the user'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        return $this->json([
+            'message' => 'User created successfully',
+            'user' => $user
+        ], Response::HTTP_CREATED);
+    }
+
+
+
+
 
     #[Route('/user/{_id_user}', name: 'update_user', methods: ['PUT'])]
     public function updateUser(
-        string $_id_user, 
-        Request $request, 
-        UserRepository $userRepository, 
-        EntityManagerInterface $entityManager, 
+        string $_id_user,
+        Request $request,
+        UserRepository $userRepository,
+        EntityManagerInterface $entityManager,
         UserPasswordHasherInterface $passwordHasher,
         ValidatorInterface $validator
     ): Response {
@@ -169,7 +170,7 @@ class UserController extends AbstractController
         error_log($newPassword);
         $confirmPassword = $request->request->get('confirm_mdp');
         error_log($newPassword);
-        $infosUser= $request->request->get('infos_user');
+        $infosUser = $request->request->get('infos_user');
         error_log($newPassword);
 
         if ($nameUser !== null && $user->getNameUser() !== $nameUser && $user->getInfos_user() !== $infosUser) {
@@ -187,10 +188,10 @@ class UserController extends AbstractController
             // This is pseudo-code and needs to be replaced with your actual logic
             if (!$passwordHasher->isPasswordValid($user, $newPassword)) {
                 $hashedPassword = $passwordHasher->hashPassword($user, $newPassword);
-                if($newPassword !== $confirmPassword){
+                if ($newPassword !== $confirmPassword) {
                     return $this->json(['error' => 'Passwords do not match'], Response::HTTP_BAD_REQUEST);
                 }
-                $user->setMdp($hashedPassword);
+                $user->setPassword($hashedPassword);
                 $changesDetected = true;
             }
         }
@@ -225,23 +226,22 @@ class UserController extends AbstractController
 
     #[Route('/user/{_id_user}', name: 'delete_user', methods: ['DELETE'])]
     public function deleteUser(
-        string $_id_user, 
-        UserRepository $userRepository, 
-        EntityManagerInterface $entityManager): Response
-    {
+        string $_id_user,
+        UserRepository $userRepository,
+        EntityManagerInterface $entityManager
+    ): Response {
         $user = $userRepository->findOneByIdUser($_id_user);
         if (!$user) {
             return $this->json('No user found for id' . $_id_user, 404);
         }
 
-        try { 
+        try {
             $entityManager->remove($user);
             $entityManager->flush();
-            
         } catch (\Exception $e) {
-            return $this->json(['error'=>'An error occured while updating the user'],500);
+            return $this->json(['error' => 'An error occured while updating the user'], 500);
         }
 
-        return $this->json(['message'=>'User deleted successfully']);
+        return $this->json(['message' => 'User deleted successfully']);
     }
 }

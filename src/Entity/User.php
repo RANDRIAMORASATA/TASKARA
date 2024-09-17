@@ -39,13 +39,14 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
     #[Assert\NotBlank(message: "Password is required")]
     private ?string $mdp = null;
 
-    private?string $confirm_mdp = null;
+    private ?string $confirm_mdp = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $infos_user = null;
 
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->projects = new ArrayCollection();
         $this->tasks = new ArrayCollection();
     }
@@ -109,17 +110,6 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
         return $this;
     }
 
-    public function getMdp(): ?string
-    {
-        return $this->mdp;
-    }
-
-    public function setMdp(string $mdp): static
-    {
-        $this->mdp = $mdp;
-
-        return $this;
-    }
     // Implement the getPassword method required by PasswordAuthenticatedUserInterface
     public function getPassword(): string
     {
@@ -134,9 +124,10 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
         return $this;
     }
 
+
     /**
      * Get the value of _id_user
-     */ 
+     */
     public function get_id_user()
     {
         return $this->_id_user;
@@ -144,7 +135,7 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
 
     /**
      * Get the value of confirm_mdp
-     */ 
+     */
     public function getConfirm_mdp()
     {
         return $this->confirm_mdp;
@@ -154,7 +145,7 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
      * Set the value of confirm_mdp
      *
      * @return  self
-     */ 
+     */
     public function setConfirm_mdp($confirm_mdp)
     {
         $this->confirm_mdp = $confirm_mdp;
@@ -164,8 +155,8 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
 
     /**
      * Get the value of infos_user
-     */ 
-    public function getInfos_user()
+     */
+    public function getInfos_user(): ?string
     {
         return $this->infos_user;
     }
@@ -174,11 +165,10 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
      * Set the value of infos_user
      *
      * @return  self
-     */ 
-    public function setInfos_user($infos_user)
+     */
+    public function setInfos_user(?string $infos_user): self
     {
         $this->infos_user = $infos_user;
-
         return $this;
     }
     // Méthodes pour les projets
@@ -249,4 +239,3 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
         return $this->email;
     }
 }
-

@@ -29,3 +29,7 @@ services:
     App\Repository\UserRepository:
         autowire: true
         autoconfigure: true
+
+    Symfony\Component\Security\Core\Password\UserPasswordHasherInterface:
+        autowire: true
+        autoconfigure: true

@@ -33,12 +33,12 @@ class ProjectController extends AbstractController
         }
         return $this->json(['project' => $project]);
     }
-    
+
 
     #[Route('/project', name: 'create_project', methods: ['POST'])]
     public function createProject(
-        Request $request, 
-        EntityManagerInterface $entityManager, 
+        Request $request,
+        EntityManagerInterface $entityManager,
         ProjectRepository $projectRepository,
         UserRepository $userRepository,
         TaskRepository $taskRepository,
@@ -52,6 +52,7 @@ class ProjectController extends AbstractController
         $project->setIdProject($id_project);
 
         $name_project = $data['name_project'] ?? null;
+        error_log("Name project: " . $name_project);
         if (empty($name_project)) {
             return $this->json(['message' => 'Project name is required'], Response::HTTP_BAD_REQUEST);
         }
@@ -116,52 +117,51 @@ class ProjectController extends AbstractController
         ], Response::HTTP_CREATED);
     }
 
-    
 
-    
+
+
 
     #[Route('/project/{id_project}', name: 'update_project', methods: ['PUT'])]
     public function updateProject(
-        string $id_project, 
-        Request $request, 
-        ProjectRepository $projectRepository, 
+        string $id_project,
+        Request $request,
+        ProjectRepository $projectRepository,
         EntityManagerInterface $entityManager,
         ValidatorInterface $validator
-        ): Response
-    {
+    ): Response {
         $requestData = $request->request->all();
         error_log("Request data: " . json_encode($requestData));
         $project = $projectRepository->findOneByIdProject($id_project);
-        if(!$project){
-            return $this->json(['message'=>'Project not found'],404);
+        if (!$project) {
+            return $this->json(['message' => 'Project not found'], 404);
         }
         $changesDetected = false;
         $name_project = $request->request->get('name_project');
-        if($name_project){
+        if ($name_project) {
             $project->setNameProject($name_project);
             $changesDetected = true;
         }
         $description_project = $request->request->get('description_project');
-        if($description_project){
+        if ($description_project) {
             $project->setDescriptionProject($description_project);
             $changesDetected = true;
         }
         $status = $request->request->get('status');
-        if($status){
+        if ($status) {
             $project->setStatus($status);
             $changesDetected = true;
         }
-        if(!$changesDetected){
-            return $this->json(['message'=>'No changes detected'],400);
+        if (!$changesDetected) {
+            return $this->json(['message' => 'No changes detected'], 400);
         }
         $errors = $validator->validate($project);
-        if(count($errors) > 0){
-            return $this->json($errors,400);
+        if (count($errors) > 0) {
+            return $this->json($errors, 400);
         }
         try {
             $entityManager->flush();
         } catch (\Exception $e) {
-            return $this->json(['message'=>$e->getMessage()],500);
+            return $this->json(['message' => $e->getMessage()], 500);
         }
         return $this->json([
             'message' => 'Project updated successfully',
@@ -171,22 +171,21 @@ class ProjectController extends AbstractController
 
     #[Route('/project/{id_project}', name: 'delete_project', methods: ['DELETE'])]
     public function deleteProject(
-        string $id_project, 
-        ProjectRepository $projectRepository, 
+        string $id_project,
+        ProjectRepository $projectRepository,
         EntityManagerInterface $entityManager
-        ): Response
-    {
+    ): Response {
         $project = $projectRepository->findOneByIdProject($id_project);
-        if(!$project){
-            return $this->json(['message'=>'Project not found'],404);
+        if (!$project) {
+            return $this->json(['message' => 'Project not found'], 404);
         }
-       try {
-           $entityManager->remove($project);
-              $entityManager->flush();
+        try {
+            $entityManager->remove($project);
+            $entityManager->flush();
         } catch (\Exception $e) {
-            return $this->json(['message'=>$e->getMessage()],500);
+            return $this->json(['message' => $e->getMessage()], 500);
         }
 
-        return $this->json(['message'=>'Project deleted successfully']);
+        return $this->json(['message' => 'Project deleted successfully']);
     }
 }
