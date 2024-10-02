@@ -44,12 +44,16 @@ class ProjectController extends AbstractController
         TaskRepository $taskRepository,
         ValidatorInterface $validator
     ): Response {
+<<<<<<< HEAD
         if ($request->getContentType() === 'json') {
             $data = json_decode($request->getContent(), true);
         } else {
             $data = $request->request->all();
         }
         // Log all request parameters
+=======
+        $data = json_decode($request->getContent(), true);
+>>>>>>> 14eebd5ba7c25b893878995ddc8e4636279492e3
         error_log("Request data: " . json_encode($data));
 
         $project = new Project();
@@ -79,6 +83,7 @@ class ProjectController extends AbstractController
         $project->setCreatedAt($createdAt);
 
         $deadline = new \DateTimeImmutable();
+<<<<<<< HEAD
         if (empty($deadline)) {
             return $this->json(['message' => 'Project deadline is required'], Response::HTTP_BAD_REQUEST);
         }
@@ -88,6 +93,11 @@ class ProjectController extends AbstractController
         if (!is_array($taskIds)) {
             return $this->json(['message' => 'Tasks should be an array'], Response::HTTP_BAD_REQUEST);
         }
+=======
+        $project->setDeadline($deadline);
+
+        $taskIds = $data['tasks'] ?? [];
+>>>>>>> 14eebd5ba7c25b893878995ddc8e4636279492e3
 
         // Process tasks
         foreach ($taskIds as $taskId) {

@@ -57,9 +57,6 @@ class UserRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
-
-
-
     /**
      * @return User Returns a User object
      * @param array $data
@@ -78,9 +75,6 @@ class UserRepository extends ServiceEntityRepository
             return false;
         }
     }
-
-
-
 
 
     /**

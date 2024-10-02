@@ -7,7 +7,10 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 14eebd5ba7c25b893878995ddc8e4636279492e3
 #[ORM\Entity(repositoryClass: ProjectRepository::class)]
 class Project
 {
@@ -27,7 +30,11 @@ class Project
     #[ORM\Column]
     private ?\DateTimeImmutable $deadline = null;
 
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> 14eebd5ba7c25b893878995ddc8e4636279492e3
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\User", inversedBy="projects")
@@ -46,11 +53,20 @@ class Project
     #[ORM\Column(length: 255)]
     private ?string $status = null;
 
+<<<<<<< HEAD
     public function __construct()
     {
         $this->tasks = new ArrayCollection();
     }
 
+=======
+    public function __construct() {
+        $this->tasks = new ArrayCollection();
+    }
+
+  
+
+>>>>>>> 14eebd5ba7c25b893878995ddc8e4636279492e3
     public function getIdProject(): ?string
     {
         return $this->_id_project;
@@ -125,7 +141,11 @@ class Project
 
     /**
      * Get the value of user
+<<<<<<< HEAD
      */
+=======
+     */ 
+>>>>>>> 14eebd5ba7c25b893878995ddc8e4636279492e3
     public function getUser(): User
     {
         return $this->user;
@@ -134,7 +154,11 @@ class Project
      * Set the value of user
      *
      * @return  self
+<<<<<<< HEAD
      */
+=======
+     */ 
+>>>>>>> 14eebd5ba7c25b893878995ddc8e4636279492e3
     public function setUser(User $user): static
     {
         $this->user = $user;
@@ -144,7 +168,11 @@ class Project
 
     /**
      * Get the value of tasks
+<<<<<<< HEAD
      */
+=======
+     */ 
+>>>>>>> 14eebd5ba7c25b893878995ddc8e4636279492e3
     public function getTasks()
     {
         return $this->tasks;
@@ -154,7 +182,11 @@ class Project
      * Set the value of tasks
      *
      * @return  self
+<<<<<<< HEAD
      */
+=======
+     */ 
+>>>>>>> 14eebd5ba7c25b893878995ddc8e4636279492e3
     public function setTasks($tasks)
     {
         $this->tasks = $tasks;
@@ -164,7 +196,11 @@ class Project
 
     /**
      * Get the value of _id_project
+<<<<<<< HEAD
      */
+=======
+     */ 
+>>>>>>> 14eebd5ba7c25b893878995ddc8e4636279492e3
     public function get_id_project()
     {
         return $this->_id_project;
@@ -172,7 +208,11 @@ class Project
 
     /**
      * Get the value of deadline
+<<<<<<< HEAD
      */
+=======
+     */ 
+>>>>>>> 14eebd5ba7c25b893878995ddc8e4636279492e3
     public function getDeadline()
     {
         return $this->deadline;
@@ -182,7 +222,11 @@ class Project
      * Set the value of deadline
      *
      * @return  self
+<<<<<<< HEAD
      */
+=======
+     */ 
+>>>>>>> 14eebd5ba7c25b893878995ddc8e4636279492e3
     public function setDeadline($deadline)
     {
         $this->deadline = $deadline;
