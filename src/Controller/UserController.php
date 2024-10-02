@@ -35,7 +35,6 @@ class UserController extends AbstractController
         return $this->json(['user' => $user]);
     }
 
-<<<<<<< HEAD
 
     #[Route('/user/email/{email}', name: 'get_user_by_email', methods: ['GET'])]
     public function getUserByEmail(string $email, UserRepository $userRepository): Response
@@ -47,8 +46,6 @@ class UserController extends AbstractController
         return $this->json(['user' => $user]);
     }
 
-=======
->>>>>>> 14eebd5ba7c25b893878995ddc8e4636279492e3
     /**User create */
 
     #[Route('/user', name: 'create_user', methods: ['POST'])]
@@ -61,7 +58,6 @@ class UserController extends AbstractController
         ValidatorInterface $validator,
         UserPasswordHasherInterface $passwordHasher
     ): Response {
-<<<<<<< HEAD
         if ($request->getContentType() === 'json') {
             $data = json_decode($request->getContent(), true);
         } else {
@@ -99,16 +95,6 @@ class UserController extends AbstractController
         $infos_user = $data['infos_user'] ?? null;
         $user->setInfos_user($infos_user);
 
-=======
-        // Log all request parameters
-        $data = $request->request->all();
-        error_log("Request data: " . json_encode($data));
-
-        $user = new User();
-        $id_user = $request->request->get('_id_user', uniqid());
-        $user->setIdUser($id_user);
-
->>>>>>> 14eebd5ba7c25b893878995ddc8e4636279492e3
         // Handle projects and tasks
         $projectIds = $request->request->get('projects');
         $taskIds = $request->request->get('tasks');
@@ -138,36 +124,6 @@ class UserController extends AbstractController
             }
         }
 
-<<<<<<< HEAD
-=======
-        $name_user = $request->request->get('name_user');
-        error_log('Received name_user: ' . $name_user);
-        if (empty($name_user)) {
-            return $this->json(['error' => 'Name is required'], Response::HTTP_BAD_REQUEST);
-        }
-        $user->setNameUser($name_user);
-
-        $email = $request->request->get('email');
-        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return $this->json(['error' => 'Valid email is required'], Response::HTTP_BAD_REQUEST);
-        }
-        $user->setEmail($email);
-
-        $mdp = $request->request->get('mdp');
-        if (empty($mdp)) {
-            return $this->json(['error' => 'Password is required'], Response::HTTP_BAD_REQUEST);
-        }
-
-        // Hash the password
-        $confirm_mdp = $request->request->get('confirm_mdp');
-        if ($mdp !== $confirm_mdp) {
-            return $this->json(['error' => 'Passwords do not match'], Response::HTTP_BAD_REQUEST);
-        }
-        $user->setPassword($passwordHasher->hashPassword($user, $mdp));
-
-        $infos_user = $request->request->get('infos_user');
-        $user->setInfos_user($infos_user);
->>>>>>> 14eebd5ba7c25b893878995ddc8e4636279492e3
 
         // Validation
         $errors = $validator->validate($user);
