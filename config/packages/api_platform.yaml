@@ -1,0 +1,25 @@
+# config/packages/api_platform.yaml
+api_platform:
+    title: 'API Platform'
+    version: '1.0.0'
+    enable_swagger_ui: true
+    enable_re_doc: false
+    enable_docs: true
+    formats:
+        jsonld: ['application/ld+json']
+        json: ['application/json']
+        html: ['text/html']
+    patch_formats:
+        json: ['application/merge-patch+json']
+    error_formats:
+        jsonproblem: ['application/problem+json']
+        json: ['application/json']
+    collection:
+        pagination:
+            enabled: true
+            enabled_parameter_name: 'pagination'
+            items_per_page_parameter_name: 'itemsPerPage'
+            page_parameter_name: 'page'
+            partial_parameter_name: 'partial'
+    mapping:
+        paths: ['%kernel.project_dir%/src/Entity']

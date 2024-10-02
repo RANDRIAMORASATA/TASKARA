@@ -1,0 +1,24 @@
+#!/usr/bin/env php
+<?php
+
+use App\Kernel;
+use Symfony\Bundle\FrameworkBundle\Console\Application;
+
+// delete database
+//delete database via le commande php/bin console doctrine:database:drop --force
+
+//delete database via le commande php/bin console doctrine:database:create
+//delete database via le commande php/bin console doctrine:schema:update --force
+
+//recreate database and load fixtures dans les tables
+//delete database via le commande php/bin console doctrine:fixtures:load
+
+/*php bin/console d:d:d -f
+php bin/console d:d:c
+
+php bin/console d:m:m
+
+php bin/console d:f:l*/
+
+
+
