@@ -22,7 +22,19 @@ class UserController extends AbstractController
     public function getUsers(UserRepository $userRepository): Response
     {
         $users = $userRepository->findAllUsers();
-        return $this->json(['users' => $users]);
+        $userData = array_map(function ($user) {
+            return [
+                'idUser' => $user->getIdUser(),
+                'nameUser' => $user->getNameUser(),
+                'email' => $user->getEmail(),
+                'infos_user' => $user->getInfos_user(), // Assurez-vous d'inclure ce champ
+                '_id_user' => $user->getIdUser(),
+                'roles' => $user->getRoles(),
+                'salt' => $user->getSalt(),
+                'userIdentifier' => $user->getUserIdentifier()
+            ];
+        }, $users);
+        return $this->json(['users' => $userData]);
     }
 
     #[Route('/user/{_id_user}', name: 'get_user', methods: ['GET'])]
@@ -32,7 +44,18 @@ class UserController extends AbstractController
         if (!$user) {
             return $this->json('No user found for id ' . $_id_user, 404);
         }
-        return $this->json(['user' => $user]);
+        return $this->json([
+            'user' => [
+                'id_user' => $user->getIdUser(),
+                'name_user' => $user->getNameUser(),
+                'email' => $user->getEmail(),
+                'infos_user' => $user->getInfos_user(), // Assurez-vous d'inclure ce champ
+                '_id_user' => $user->getIdUser(),
+                'roles' => $user->getRoles(),
+                'salt' => $user->getSalt(),
+                'userIdentifier' => $user->getUserIdentifier()
+            ]
+        ]);
     }
 
 
@@ -43,7 +66,18 @@ class UserController extends AbstractController
         if (!$user) {
             return $this->json('No user found for email ' . $email, 404);
         }
-        return $this->json(['user' => $user]);
+        return $this->json([
+            'user' => [
+                'id_user' => $user->getIdUser(),
+                'name_user' => $user->getNameUser(),
+                'email' => $user->getEmail(),
+                'infos_user' => $user->getInfos_user(), // Assurez-vous d'inclure ce champ
+                '_id_user' => $user->getIdUser(),
+                'roles' => $user->getRoles(),
+                'salt' => $user->getSalt(),
+                'userIdentifier' => $user->getUserIdentifier()
+            ]
+        ]);
     }
 
     /**User create */
@@ -162,8 +196,13 @@ class UserController extends AbstractController
         ValidatorInterface $validator
     ): Response {
         // Log the received request data
-        $requestData = $request->request->all();
-        error_log("Received request data: " . json_encode($requestData));
+        if ($request->getContentType() === 'json') {
+            $data = json_decode($request->getContent(), true);
+        } else {
+            $data = $request->request->all();
+        }
+        // Log all request parameters
+        error_log("Request data: " . json_encode($data));
 
         // Retrieve the user from repository
         $user = $userRepository->findOneByIdUser($_id_user);
@@ -175,66 +214,68 @@ class UserController extends AbstractController
         $changesDetected = false;
 
         // Update user fields if new values are provided
-        $nameUser = $request->request->get('name_user');
-        error_log($nameUser);
-        $email = $request->request->get('email');
-        error_log($email);
-        $newPassword = $request->request->get('mdp');
-        error_log($newPassword);
-        $confirmPassword = $request->request->get('confirm_mdp');
-        error_log($newPassword);
-        $infosUser = $request->request->get('infos_user');
-        error_log($newPassword);
-
-        if ($nameUser !== null && $user->getNameUser() !== $nameUser && $user->getInfos_user() !== $infosUser) {
-            $user->setNameUser($nameUser);
+        if (isset($data['name_user']) && $user->getNameUser() !== $data['name_user']) {
+            $user->setNameUser($data['name_user']);
             $changesDetected = true;
         }
 
-        if ($email !== null && $user->getEmail() !== $email && $user->getInfos_user() !== $infosUser) {
-            $user->setEmail($email);
+
+        if (isset($data['email']) && $user->getEmail() !== $data['email']) {
+            $user->setEmail($data['email']);
             $changesDetected = true;
         }
 
-        if ($newPassword !== null) {
-            // Assuming you have a method to check if the password is different
-            // This is pseudo-code and needs to be replaced with your actual logic
-            if (!$passwordHasher->isPasswordValid($user, $newPassword)) {
-                $hashedPassword = $passwordHasher->hashPassword($user, $newPassword);
-                if ($newPassword !== $confirmPassword) {
-                    return $this->json(['error' => 'Passwords do not match'], Response::HTTP_BAD_REQUEST);
-                }
-                $user->setPassword($hashedPassword);
-                $changesDetected = true;
+        if (isset($data['mdp'])) {
+            if ($data['mdp'] !== ($data['confirm_mdp'] ?? '')) {
+                return $this->json(['error' => 'Passwords do not match'], Response::HTTP_BAD_REQUEST);
             }
+            $user->setPassword($passwordHasher->hashPassword($user, $data['mdp']));
+            $changesDetected = true;
+        }
+
+        if (isset($data['infos_user']) && $user->getInfos_user() !== $data['infos_user']) {
+            $user->setInfos_user($data['infos_user']);
+            $changesDetected = true;
         }
 
         // If no changes were detected, return early
         if (!$changesDetected) {
-            return $this->json([
-                'message' => 'No changes detected. User not updated.'
-            ]);
+            return $this->json(['message' => 'No changes detected. User not updated.']);
         }
 
         // Validate the updated user entity
         $errors = $validator->validate($user);
         if (count($errors) > 0) {
-            return $this->json($errors, Response::HTTP_BAD_REQUEST);
+            $errorsArray = [];
+            foreach ($errors as $error) {
+                $errorsArray[] = $error->getMessage();
+            }
+            return $this->json(['errors' => $errorsArray], Response::HTTP_BAD_REQUEST);
         }
 
         // Save changes
         try {
             $entityManager->flush();
         } catch (\Exception $e) {
+            error_log("Error updating user: " . $e->getMessage());
             return $this->json(['error' => 'An error occurred while updating the user'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
-        // Return success response
         return $this->json([
             'message' => 'User updated successfully',
-            'user' => $user
+            'user' => [
+                'id_user' => $user->getIdUser(),
+                'name_user' => $user->getNameUser(),
+                'email' => $user->getEmail(),
+                'infos_user' => $user->getInfos_user(), // Assurez-vous d'inclure ce champ
+                '_id_user' => $user->getIdUser(),
+                'roles' => $user->getRoles(),
+                'salt' => $user->getSalt(),
+                'userIdentifier' => $user->getUserIdentifier()
+            ]
         ]);
     }
+
 
 
     #[Route('/user/{_id_user}', name: 'delete_user', methods: ['DELETE'])]
