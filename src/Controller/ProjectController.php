@@ -21,8 +21,6 @@ class ProjectController extends AbstractController
     public function getProjects(ProjectRepository $projectRepository): Response
     {
         $projects = $projectRepository->findAllProjects();
-
-
         $formattedProjects = array_map(function ($project) {
             return [
                 '_id_project' => $project->getIdProject(),
@@ -47,7 +45,6 @@ class ProjectController extends AbstractController
             return $this->json(['message' => 'Project not found'], Response::HTTP_NOT_FOUND);
         }
 
-        // Renommer les propriétés pour correspondre au modèle
         $formattedProject = [
             '_id_project' => $project->getIdProject(),
             'name_project' => $project->getNameProject(),
@@ -56,7 +53,6 @@ class ProjectController extends AbstractController
             'updatedAt' => $project->getUpdatedAt(),
             'status' => $project->getStatus(),
             'deadline' => $project->getDeadline(),
-            // Ajoutez d'autres propriétés si nécessaire
         ];
 
         return $this->json(['project' => $formattedProject]);

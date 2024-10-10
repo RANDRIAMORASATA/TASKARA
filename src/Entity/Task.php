@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Repository\TaskRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
 class Task
@@ -16,13 +18,13 @@ class Task
      * @ORM\ManyToOne(targetEntity="App\Entity\Project", inversedBy="tasks")
      * @ORM\JoinColumn(nullable=false)
      */
-    private $project;
+    private ?Project $project = null;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\User", inversedBy="tasks")
      * @ORM\JoinColumn(nullable=false)
      */
-    private $user;
+    private User $user;
 
     #[ORM\Column(length: 255)]
     private ?string $name_task = null;
@@ -111,52 +113,39 @@ class Task
         return $this;
     }
 
-    /**
-     * Get the value of project
-     */ 
-    public function getProject()
+    // Change this method to return a single Project
+    public function getProject(): ?Project
     {
         return $this->project;
     }
 
-    /**
-     * Set the value of project
-     *
-     * @return  self
-     */ 
-    public function setProject($project)
+    public function setProject(?Project $project): static
     {
         $this->project = $project;
 
         return $this;
     }
 
+
     /**
      * Get the value of user
-     */ 
-    public function getUser()
+     */
+    public function getUser(): User
     {
         return $this->user;
     }
+
+
 
     /**
      * Set the value of user
      *
      * @return  self
-     */ 
-    public function setUser($user)
+     */
+    public function setUser(User $user): static
     {
         $this->user = $user;
 
         return $this;
     }
-
-    /**
-     * Get the value of _id_task
-     */ 
-    public function get_id_task()
-    {
-        return $this->_id_task;
-    }
-    
 }
