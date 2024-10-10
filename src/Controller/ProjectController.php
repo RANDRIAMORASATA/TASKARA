@@ -164,45 +164,78 @@ class ProjectController extends AbstractController
         EntityManagerInterface $entityManager,
         ValidatorInterface $validator
     ): Response {
-        $requestData = $request->request->all();
-        error_log("Request data: " . json_encode($requestData));
+        if ($request->getContentType() === 'json') {
+            $data = json_decode($request->getContent(), true);
+        } else {
+            $data = $request->request->all();
+        }
+
+        error_log("Request data: " . json_encode($data));
         $project = $projectRepository->findOneByIdProject($id_project);
         if (!$project) {
-            return $this->json(['message' => 'Project not found'], 404);
+            return $this->json(['message' => 'Project not found'], Response::HTTP_NOT_FOUND);
         }
+        
         $changesDetected = false;
-        $name_project = $request->request->get('name_project');
-        if ($name_project) {
+
+        // Check and update name
+        $name_project = $data['name_project'] ?? null;
+        if ($name_project !== null && $project->getNameProject() !== $name_project) {
             $project->setNameProject($name_project);
             $changesDetected = true;
         }
-        $description_project = $request->request->get('description_project');
-        if ($description_project) {
+
+        // Check and update description
+        $description_project = $data['description_project'] ?? null;
+        if ($description_project !== null && $project->getDescriptionProject() !== $description_project) {
             $project->setDescriptionProject($description_project);
             $changesDetected = true;
         }
-        $status = $request->request->get('status');
-        if ($status) {
+
+        // Check and update status
+        $status = $data['status'] ?? null;
+        if ($status !== null && $project->getStatus() !== $status) {
             $project->setStatus($status);
             $changesDetected = true;
         }
-        if (!$changesDetected) {
-            return $this->json(['message' => 'No changes detected'], 400);
+
+        // Check and update deadline
+        $deadline = $data['deadline'] ?? null;
+        if ($deadline !== null && $project->getDeadline() !== new \DateTimeImmutable($deadline)) {
+            $project->setDeadline(new \DateTimeImmutable($deadline));
+            $changesDetected = true;
         }
+
+        if (!$changesDetected) {
+            return $this->json(['message' => 'No changes detected'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Validate changes
         $errors = $validator->validate($project);
         if (count($errors) > 0) {
-            return $this->json($errors, 400);
+            return $this->json($errors, Response::HTTP_BAD_REQUEST);
         }
+
         try {
             $entityManager->flush();
         } catch (\Exception $e) {
-            return $this->json(['message' => $e->getMessage()], 500);
+            return $this->json(['error' => 'An error occurred while updating the project: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+
         return $this->json([
             'message' => 'Project updated successfully',
-            'project' => $project
-        ]);
+            'project' => [
+                '_id_project' => $project->getIdProject(),
+                'name_project' => $project->getNameProject(),
+                'description_project' => $project->getDescriptionProject(),
+                'createdAt' => $project->getCreatedAt(),
+                'updatedAt' => $project->getUpdatedAt(),
+                'status' => $project->getStatus(),
+                'deadline' => $project->getDeadline(),
+            ]
+        ], Response::HTTP_OK);
     }
+
 
     #[Route('/project/{id_project}', name: 'delete_project', methods: ['DELETE'])]
     public function deleteProject(
