@@ -8,6 +8,8 @@ use App\Repository\TaskRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,14 +26,15 @@ class UserController extends AbstractController
         $users = $userRepository->findAllUsers();
         $userData = array_map(function ($user) {
             return [
-                'idUser' => $user->getIdUser(),
-                'nameUser' => $user->getNameUser(),
+                'id_user' => $user->getIdUser(),
+                'name_user' => $user->getNameUser(),
                 'email' => $user->getEmail(),
+                'image_link' => $user->getImage_link(),
+                'role' => $user->getRole(),
+                'adress' => $user->getAdress(),
+                'contract' => $user->getContract(),
                 'infos_user' => $user->getInfos_user(), // Assurez-vous d'inclure ce champ
                 '_id_user' => $user->getIdUser(),
-                'roles' => $user->getRoles(),
-                'salt' => $user->getSalt(),
-                'userIdentifier' => $user->getUserIdentifier()
             ];
         }, $users);
         return $this->json(['users' => $userData]);
@@ -49,11 +52,12 @@ class UserController extends AbstractController
                 'id_user' => $user->getIdUser(),
                 'name_user' => $user->getNameUser(),
                 'email' => $user->getEmail(),
+                'image_link' => $user->getImage_link(),
+                'role' => $user->getRole(),
+                'adress' => $user->getAdress(),
+                'contract' => $user->getContract(),
                 'infos_user' => $user->getInfos_user(), // Assurez-vous d'inclure ce champ
                 '_id_user' => $user->getIdUser(),
-                'roles' => $user->getRoles(),
-                'salt' => $user->getSalt(),
-                'userIdentifier' => $user->getUserIdentifier()
             ]
         ]);
     }
@@ -71,11 +75,12 @@ class UserController extends AbstractController
                 'id_user' => $user->getIdUser(),
                 'name_user' => $user->getNameUser(),
                 'email' => $user->getEmail(),
+                'image_link' => $user->getImage_link(),
+                'role' => $user->getRole(),
+                'adress' => $user->getAdress(),
+                'contract' => $user->getContract(),
                 'infos_user' => $user->getInfos_user(), // Assurez-vous d'inclure ce champ
                 '_id_user' => $user->getIdUser(),
-                'roles' => $user->getRoles(),
-                'salt' => $user->getSalt(),
-                'userIdentifier' => $user->getUserIdentifier()
             ]
         ]);
     }
@@ -115,6 +120,36 @@ class UserController extends AbstractController
             return $this->json(['error' => 'Valid email is required'], Response::HTTP_BAD_REQUEST);
         }
         $user->setEmail($email);
+
+        // Gestion de l'image
+        if ($request->files->has('image')) {
+            $file = $request->files->get('image');
+            $originalFilename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            $extension = $file->guessExtension() ?: 'jpg';
+            $newFilename = sprintf('%s-%d.%s', $originalFilename, time(), $extension);
+            $directory = $this->getParameter('kernel.project_dir') . '/assets/img/user_image';
+
+            try {
+                $file->move($directory, $newFilename);
+                $user->setImage_link('/assets/img/user_image/' . $newFilename); // Set uploaded image link
+            } catch (FileException $e) {
+                return new JsonResponse(['error' => 'Could not upload file.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+            }
+        } else {
+            // Set default image if no image is uploaded
+            $user->setImage_link('/assets/img/user_image/default.jpg'); // Replace with your default image path
+        }
+
+        $role = $data['role'] ?? " ";
+        $user->setRole($role);
+
+        $adress = $data['adress'] ?? " ";
+        $user->setAdress($adress);
+
+
+        $contract = $data['contract'] ?? " ";
+        $user->setContract($contract);
+
         $mdp = $data['mdp'] ?? null;
         if (empty($mdp)) {
             return $this->json(['error' => 'Password is required'], Response::HTTP_BAD_REQUEST);
@@ -126,7 +161,7 @@ class UserController extends AbstractController
 
         $user->setPassword($passwordHasher->hashPassword($user, $mdp));
 
-        $infos_user = $data['infos_user'] ?? null;
+        $infos_user = $data['infos_user'] ?? " ";
         $user->setInfos_user($infos_user);
 
         // Handle projects and tasks
@@ -178,7 +213,17 @@ class UserController extends AbstractController
 
         return $this->json([
             'message' => 'User created successfully',
-            'user' => $user
+            'user' =>  [
+                'id_user' => $user->getIdUser(),
+                'name_user' => $user->getNameUser(),
+                'email' => $user->getEmail(),
+                'image_link' => $user->getImage_link(),
+                'role' => $user->getRole(),
+                'adress' => $user->getAdress(),
+                'contract' => $user->getContract(),
+                'infos_user' => $user->getInfos_user(), // Assurez-vous d'inclure ce champ
+                '_id_user' => $user->getIdUser(),
+            ]
         ], Response::HTTP_CREATED);
     }
 
@@ -225,6 +270,38 @@ class UserController extends AbstractController
             $changesDetected = true;
         }
 
+        // Gestion de l'image pour mise à jour
+        if ($request->files->has('image')) {
+            $file = $request->files->get('image');
+            $originalFilename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            $extension = $file->guessExtension() ?: 'jpg';
+            $newFilename = sprintf('%s-%d.%s', $originalFilename, time(), $extension);
+
+            $directory = $this->getParameter('kernel.project_dir') . '/assets/img/user_image/';
+
+            try {
+                $file->move($directory, $newFilename);
+                $user->setImage_link('/assets/img/user_image/' . $newFilename); // Mettre à jour l'URL de l'image
+            } catch (FileException $e) {
+                return new JsonResponse(['error' => 'Could not upload file.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+            }
+        }
+
+        if (isset($data['role']) && $user->getRole() !== $data['role']) {
+            $user->setRole($data['role']);
+            $changesDetected = true;
+        }
+
+        if (isset($data['adress']) && $user->getAdress() !== $data['adress']) {
+            $user->setAdress($data['adress']);
+            $changesDetected = true;
+        }
+
+        if (isset($data['contract']) && $user->getContract() !== $data['contract']) {
+            $user->setContract($data['contract']);
+            $changesDetected = true;
+        }
+
         if (isset($data['mdp'])) {
             if ($data['mdp'] !== ($data['confirm_mdp'] ?? '')) {
                 return $this->json(['error' => 'Passwords do not match'], Response::HTTP_BAD_REQUEST);
@@ -267,11 +344,12 @@ class UserController extends AbstractController
                 'id_user' => $user->getIdUser(),
                 'name_user' => $user->getNameUser(),
                 'email' => $user->getEmail(),
+                'image_link' => $user->getImage_link(),
+                'role' => $user->getRole(),
+                'adress' => $user->getAdress(),
+                'contract' => $user->getContract(),
                 'infos_user' => $user->getInfos_user(), // Assurez-vous d'inclure ce champ
                 '_id_user' => $user->getIdUser(),
-                'roles' => $user->getRoles(),
-                'salt' => $user->getSalt(),
-                'userIdentifier' => $user->getUserIdentifier()
             ]
         ]);
     }

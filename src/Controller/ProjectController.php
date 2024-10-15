@@ -153,9 +153,6 @@ class ProjectController extends AbstractController
     }
 
 
-
-
-
     #[Route('/project/{id_project}', name: 'update_project', methods: ['PUT'])]
     public function updateProject(
         string $id_project,
@@ -175,7 +172,7 @@ class ProjectController extends AbstractController
         if (!$project) {
             return $this->json(['message' => 'Project not found'], Response::HTTP_NOT_FOUND);
         }
-        
+
         $changesDetected = false;
 
         // Check and update name

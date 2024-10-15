@@ -35,6 +35,18 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
     #[Assert\Email(message: "The email '{{ value }}' is not a valid email.")]
     private ?string $email = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $image_link = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $role = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $adress = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $contract = null;
+
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Password is required")]
     private ?string $mdp = null;
@@ -212,7 +224,7 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
             $this->tasks->removeElement($task);
             // Set the owning side to null (unless already changed)
             if ($task->getUser() === $this) {
-                $task->setUser(null);
+                $task->setUser($this);
             }
         }
 
@@ -237,5 +249,85 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
     public function getUserIdentifier(): string
     {
         return $this->email;
+    }
+
+    /**
+     * Get the value of image_link
+     */
+    public function getImage_link()
+    {
+        return $this->image_link;
+    }
+
+    /**
+     * Set the value of image_link
+     *
+     * @return  self
+     */
+    public function setImage_link($image_link)
+    {
+        $this->image_link = $image_link;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of role
+     */
+    public function getRole()
+    {
+        return $this->role;
+    }
+
+    /**
+     * Set the value of role
+     *
+     * @return  self
+     */
+    public function setRole($role)
+    {
+        $this->role = $role;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of adress
+     */
+    public function getAdress()
+    {
+        return $this->adress;
+    }
+
+    /**
+     * Set the value of adress
+     *
+     * @return  self
+     */
+    public function setAdress($adress)
+    {
+        $this->adress = $adress;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of contract
+     */
+    public function getContract()
+    {
+        return $this->contract;
+    }
+
+    /**
+     * Set the value of contract
+     *
+     * @return  self
+     */
+    public function setContract($contract)
+    {
+        $this->contract = $contract;
+
+        return $this;
     }
 }
