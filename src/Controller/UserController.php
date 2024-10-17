@@ -133,6 +133,7 @@ class UserController extends AbstractController
                 $file->move($directory, $newFilename);
                 $user->setImage_link('/assets/img/user_image/' . $newFilename); // Set uploaded image link
             } catch (FileException $e) {
+                error_log("File upload error: " . $e->getMessage());
                 return new JsonResponse(['error' => 'Could not upload file.'], Response::HTTP_INTERNAL_SERVER_ERROR);
             }
         } else {
@@ -227,10 +228,7 @@ class UserController extends AbstractController
         ], Response::HTTP_CREATED);
     }
 
-
-
-
-
+    /**User Update */
     #[Route('/user/{_id_user}', name: 'update_user', methods: ['PUT'])]
     public function updateUser(
         string $_id_user,
@@ -272,6 +270,7 @@ class UserController extends AbstractController
 
         // Gestion de l'image pour mise à jour
         if ($request->files->has('image')) {
+            error_log("Image file detected");
             $file = $request->files->get('image');
             $originalFilename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
             $extension = $file->guessExtension() ?: 'jpg';
@@ -284,6 +283,12 @@ class UserController extends AbstractController
                 $user->setImage_link('/assets/img/user_image/' . $newFilename); // Mettre à jour l'URL de l'image
             } catch (FileException $e) {
                 return new JsonResponse(['error' => 'Could not upload file.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+            }
+        } else {
+            $existingImageLink = $user->getImage_link();
+            if ($existingImageLink) {
+                $user->setImage_link($existingImageLink);
+                $changesDetected = true; // Optional: Only set this if you consider it a change
             }
         }
 

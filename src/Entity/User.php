@@ -38,14 +38,14 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $image_link = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $role = null;
+    #[ORM\Column(length: 255)]
+    private ?string $role = "";
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $adress = null;
+    #[ORM\Column(length: 255)]
+    private ?string $adress = "";
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $contract = null;
+    #[ORM\Column(length: 255)]
+    private ?string $contract = "";
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Password is required")]
@@ -53,8 +53,8 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
 
     private ?string $confirm_mdp = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $infos_user = null;
+    #[ORM\Column(length: 255)]
+    private ?string $infos_user = "";
 
 
     public function __construct()
