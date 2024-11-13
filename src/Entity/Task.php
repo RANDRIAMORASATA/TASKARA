@@ -14,17 +14,14 @@ class Task
     #[ORM\Column(length: 255)]
     private ?string $_id_task = null;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Project", inversedBy="tasks")
-     * @ORM\JoinColumn(nullable=false)
-     */
+
+    #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'tasks')]
+    #[ORM\JoinColumn(name: '_project_id', referencedColumnName: '_id_project')]
     private ?Project $project = null;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\User", inversedBy="tasks")
-     * @ORM\JoinColumn(nullable=false)
-     */
-    private User $user;
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'tasks')]
+    #[ORM\JoinColumn(name: "_user_id", referencedColumnName: "_user_id", nullable: false)]
+    private ?User $user = null;
 
     #[ORM\Column(length: 255)]
     private ?string $name_task = null;
@@ -40,6 +37,11 @@ class Task
 
     #[ORM\Column(length: 255)]
     private ?string $status = null;
+
+    #[ORM\Column(type: 'boolean')]
+    private bool $isUrgent = false;
+
+    public function __construct() {}
 
     public function getIdTask(): ?string
     {
@@ -118,34 +120,39 @@ class Task
     {
         return $this->project;
     }
-
-    public function setProject(?Project $project): static
+    /**
+     * @param Project|null $project
+     */
+    public function setProject(?Project $project): self
     {
         $this->project = $project;
 
         return $this;
     }
 
-
-    /**
-     * Get the value of user
-     */
-    public function getUser(): User
+    public function getUser(): ?User
     {
         return $this->user;
     }
 
-
-
     /**
-     * Set the value of user
-     *
-     * @return  self
+     * @param User|null $user
      */
-    public function setUser(User $user): static
+    public function setUser(?User $user): self
     {
         $this->user = $user;
+        return $this;
+    }
 
+
+
+    public function isUrgent(): bool
+    {
+        return $this->isUrgent;
+    }
+    public function setIsUrgent(bool $isUrgent): self
+    {
+        $this->isUrgent = $isUrgent;
         return $this;
     }
 }

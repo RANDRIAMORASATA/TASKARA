@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -15,17 +16,13 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
 {
     #[ORM\Id]
     #[ORM\Column(type: "string", length: 255)]
-    private ?string $_id_user = null;
+    private ?string $_user_id = null;
 
-    /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Project", mappedBy="user")
-     */
-    private ArrayCollection $projects;
+    #[ORM\OneToMany(mappedBy: 'user', fetch: 'EAGER', targetEntity: Project::class)]
+    private Collection $projects;
 
-    /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Task", mappedBy="user")
-     */
-    private ArrayCollection $tasks;
+    #[ORM\OneToMany(mappedBy: 'user', fetch: 'EAGER', targetEntity: Task::class)]
+    private Collection $tasks;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $name_user = null;
@@ -51,38 +48,78 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
     #[Assert\NotBlank(message: "Password is required")]
     private ?string $mdp = null;
 
+
     private ?string $confirm_mdp = null;
 
     #[ORM\Column(length: 255)]
     private ?string $infos_user = "";
+
+    /* /**
+     * @ORM\OneToMany(mappedBy="user", targetEntity="App\Entity\Comment", fetch="EAGER")
+     */
+    /*private Collection $comments;*/
 
 
     public function __construct()
     {
         $this->projects = new ArrayCollection();
         $this->tasks = new ArrayCollection();
+        //$this->comments = new ArrayCollection();
     }
 
-    public function getIdUser(): ?string
+    // Getter for comments (access all comments associated with the user)
+    /* public function getComments(): Collection
     {
-        return $this->_id_user;
-    }
-
-    public function setIdUser(string $idUser): self
+        return $this->comments;
+    }*/
+    /*
+    // Optionally, add a comment to the collection (addComment method)
+    public function addComment(Comment $comment): self
     {
-        $this->_id_user = $idUser;
+        if (!$this->comments->contains($comment)) {
+            $this->comments[] = $comment;
+        }
 
         return $this;
     }
+
+    // Optionally, remove a comment from the collection (removeComment method)
+    public function removeComment(Comment $comment): self
+    {
+        if ($this->comments->contains($comment)) {
+            $this->comments->removeElement($comment);
+            // Optionally, you could also set $comment->setUser(null) here if you want to
+            // ensure the user relationship is also disassociated from the comment.
+            if ($comment->getUser() === $this) {
+                $comment->setUser(null);
+            }
+        }
+
+        return $this;
+    }*/
+
+    public function getUserId(): ?string
+    {
+        return $this->_user_id;
+    }
+
     public function getProjects(): ArrayCollection
     {
-        return $this->projects;
+        return new ArrayCollection($this->projects->toArray());
     }
 
     public function getTasks(): ArrayCollection
     {
-        return $this->tasks;
+        return new ArrayCollection($this->tasks->toArray());
     }
+
+    public function setUserId(string $_user_id): self
+    {
+        $this->_user_id = $_user_id;
+
+        return $this;
+    }
+
 
     public function setProjects(ArrayCollection $projects): self
     {
@@ -138,11 +175,11 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
 
 
     /**
-     * Get the value of _id_user
+     * Get the value of _user_id
      */
-    public function get_id_user()
+    public function get_user_id()
     {
-        return $this->_id_user;
+        return $this->_user_id;
     }
 
     /**
@@ -183,53 +220,50 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
         $this->infos_user = $infos_user;
         return $this;
     }
-    // Méthodes pour les projets
-    public function addProjects(Project $project): self
+    public function addProject(Project $project): self
     {
         if (!$this->projects->contains($project)) {
             $this->projects[] = $project;
-            $project->setUser($this);
         }
 
         return $this;
     }
 
-    public function removeProjects(Project $project): self
-    {
-        if ($this->projects->contains($project)) {
-            $this->projects->removeElement($project);
-            // Set the owning side to null (unless already changed)
-            if ($project->getUser() === $this) {
-                $project->setUser($this);
-            }
-        }
-
-        return $this;
-    }
-
-    // Méthodes pour les tâches
-    public function addTasks(Task $task): self
+    public function addTask(Task $task): self
     {
         if (!$this->tasks->contains($task)) {
             $this->tasks[] = $task;
-            $task->setUser($this);
         }
 
         return $this;
     }
 
-    public function removeTasks(Task $task): self
+
+    public function removeProject(Project $project): self
     {
-        if ($this->tasks->contains($task)) {
-            $this->tasks->removeElement($task);
-            // Set the owning side to null (unless already changed)
-            if ($task->getUser() === $this) {
-                $task->setUser($this);
+        if ($this->projects->contains($project)) {
+            $this->projects->removeElement($project);
+            if ($project->getUser() === $this) {
+                $project->setUser(null);
             }
         }
 
         return $this;
     }
+
+
+    public function removeTask(Task $task): self
+    {
+        if ($this->tasks->contains($task)) {
+            $this->tasks->removeElement($task);
+            if ($task->getUser() === $this) {
+                $task->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
     public function getRoles(): array
     {
         // Assurez-vous que chaque utilisateur a au moins le rôle "ROLE_USER"

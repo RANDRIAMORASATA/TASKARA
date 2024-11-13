@@ -23,67 +23,119 @@ class UserController extends AbstractController
     #[Route('/user', name: 'get_users', methods: ['GET'])]
     public function getUsers(UserRepository $userRepository): Response
     {
+        // Récupérer tous les utilisateurs avec leurs projets et tâches associés
         $users = $userRepository->findAllUsers();
+
+        // Vérifier si des utilisateurs sont trouvés
+        if (!$users) {
+            return $this->json(['error' => 'No users found'], 404);
+        }
+
+        // Convertir les collections en tableaux
         $userData = array_map(function ($user) {
+            // Convertir les collections ArrayCollection en tableaux
+            $projects = $user->getProjects() ? $user->getProjects()->toArray() : [];
+            $tasks = $user->getTasks() ? $user->getTasks()->toArray() : [];
+
             return [
-                'id_user' => $user->getIdUser(),
+                '_id_user' => $user->getUserId(),
                 'name_user' => $user->getNameUser(),
                 'email' => $user->getEmail(),
                 'image_link' => $user->getImage_link(),
                 'role' => $user->getRole(),
                 'adress' => $user->getAdress(),
                 'contract' => $user->getContract(),
-                'infos_user' => $user->getInfos_user(), // Assurez-vous d'inclure ce champ
-                '_id_user' => $user->getIdUser(),
+                'infos_user' => $user->getInfos_user(),
+                // Assurez-vous que les projets et tâches sont bien extraits
+                'projects' => array_map(fn($project) => [
+                    '_id_project' => $project->getIdProject(),
+                    'name_project' => $project->getNameProject(),
+                ], $projects),
+                'tasks' => array_map(fn($task) => [
+                    '_id_task' => $task->getIdTask(),
+                    'name_task' => $task->getNameTask(),
+                ], $tasks),
             ];
         }, $users);
+
+        // Retourner les utilisateurs sous forme de JSON
         return $this->json(['users' => $userData]);
     }
 
-    #[Route('/user/{_id_user}', name: 'get_user', methods: ['GET'])]
-    public function getOneUser(string $_id_user, UserRepository $userRepository): Response
-    {
-        $user = $userRepository->findOneByIdUser($_id_user);
-        if (!$user) {
-            return $this->json('No user found for id ' . $_id_user, 404);
-        }
-        return $this->json([
-            'user' => [
-                'id_user' => $user->getIdUser(),
-                'name_user' => $user->getNameUser(),
-                'email' => $user->getEmail(),
-                'image_link' => $user->getImage_link(),
-                'role' => $user->getRole(),
-                'adress' => $user->getAdress(),
-                'contract' => $user->getContract(),
-                'infos_user' => $user->getInfos_user(), // Assurez-vous d'inclure ce champ
-                '_id_user' => $user->getIdUser(),
-            ]
-        ]);
-    }
-
-
     #[Route('/user/email/{email}', name: 'get_user_by_email', methods: ['GET'])]
-    public function getUserByEmail(string $email, UserRepository $userRepository): Response
+    public function getUserDataByEmail(string $email, UserRepository $userRepository): Response
     {
+        // Recherche de l'utilisateur par son email
         $user = $userRepository->findOneByEmailUser($email);
+
+        // Si l'utilisateur n'existe pas, renvoyer un message d'erreur
         if (!$user) {
-            return $this->json('No user found for email ' . $email, 404);
+            return $this->json(['error' => 'User not found'], 404);
         }
+
+        // Récupérer les projets et les tâches associés
+        $projects = $user->getProjects() ? $user->getProjects()->toArray() : [];
+        $tasks = $user->getTasks() ? $user->getTasks()->toArray() : [];
+
+        // Structurer la réponse avec les informations de l'utilisateur, ses projets et tâches
+        $userData = [
+            '_id_user' => $user->getUserId(),
+            'name_user' => $user->getNameUser(),
+            'email' => $user->getEmail(),
+            'image_link' => $user->getImage_link(),
+            'role' => $user->getRole(),
+            'adress' => $user->getAdress(),
+            'contract' => $user->getContract(),
+            'infos_user' => $user->getInfos_user(),
+            // Projets associés
+            'projects' => array_map(fn($project) => [
+                '_id_project' => $project->getIdProject(),
+                'name_project' => $project->getNameProject(),
+            ], $projects),
+            // Tâches associées
+            'tasks' => array_map(fn($task) => [
+                '_id_task' => $task->getIdTask(),
+                'name_task' => $task->getNameTask(),
+            ], $tasks),
+        ];
+
+        // Retourner les données de l'utilisateur
+        return $this->json(['user' => $userData]);
+    }
+
+
+    #[Route('/user/{_user_id}', name: 'get_user', methods: ['GET'])]
+    public function getOneUser(string $_user_id, UserRepository $userRepository): Response
+    {
+        $user = $userRepository->findOneByIdUser($_user_id);
+        if (!$user) {
+            return $this->json('No user found for id ' . $_user_id, 404);
+        }
+        $projects = $user->getProjects() ? $user->getProjects()->toArray() : [];
+        $tasks = $user->getTasks() ? $user->getTasks()->toArray() : [];
+
         return $this->json([
             'user' => [
-                'id_user' => $user->getIdUser(),
+                '_id_user' => $user->getUserId(),
                 'name_user' => $user->getNameUser(),
                 'email' => $user->getEmail(),
                 'image_link' => $user->getImage_link(),
                 'role' => $user->getRole(),
                 'adress' => $user->getAdress(),
                 'contract' => $user->getContract(),
-                'infos_user' => $user->getInfos_user(), // Assurez-vous d'inclure ce champ
-                '_id_user' => $user->getIdUser(),
+                'infos_user' => $user->getInfos_user(),
+                'projects' => array_map(fn($project) => [
+                    '_id_project' => $project->getIdProject(),
+                    'name_project' => $project->getNameProject(),
+                ], $projects),
+                'tasks' => array_map(fn($task) => [
+                    '_id_task' => $task->getIdTask(),
+                    'name_task' => $task->getNameTask(),
+                ], $tasks),
             ]
         ]);
     }
+
 
     /**User create */
 
@@ -106,8 +158,8 @@ class UserController extends AbstractController
         error_log("Request data: " . json_encode($data));
 
         $user = new User();
-        $id_user = $data['_id_user'] ?? uniqid(); // Handle missing _id_user
-        $user->setIdUser($id_user);
+        $id_user = $data['_user_id'] ?? uniqid();
+        $user->setUserId($id_user);
 
         $name_user = $data['name_user'] ?? null;
         if (empty($name_user)) {
@@ -182,7 +234,7 @@ class UserController extends AbstractController
         foreach ($projectIds as $projectId) {
             $project = $projectRepository->find($projectId);
             if ($project) {
-                $user->addProjects($project);
+                $user->addProject($project);
             }
         }
 
@@ -190,7 +242,7 @@ class UserController extends AbstractController
         foreach ($taskIds as $taskId) {
             $task = $taskRepository->find($taskId);
             if ($task) {
-                $user->addTasks($task);
+                $user->addTask($task);
             }
         }
 
@@ -215,23 +267,22 @@ class UserController extends AbstractController
         return $this->json([
             'message' => 'User created successfully',
             'user' =>  [
-                'id_user' => $user->getIdUser(),
+                '_id_user' => $user->getUserId(),
                 'name_user' => $user->getNameUser(),
                 'email' => $user->getEmail(),
                 'image_link' => $user->getImage_link(),
                 'role' => $user->getRole(),
                 'adress' => $user->getAdress(),
                 'contract' => $user->getContract(),
-                'infos_user' => $user->getInfos_user(), // Assurez-vous d'inclure ce champ
-                '_id_user' => $user->getIdUser(),
+                'infos_user' => $user->getInfos_user()
             ]
         ], Response::HTTP_CREATED);
     }
 
     /**User Update */
-    #[Route('/user/{_id_user}', name: 'update_user', methods: ['PUT'])]
+    #[Route('/user/{_user_id}', name: 'update_user', methods: ['PUT'])]
     public function updateUser(
-        string $_id_user,
+        string $_user_id,
         Request $request,
         UserRepository $userRepository,
         EntityManagerInterface $entityManager,
@@ -248,9 +299,9 @@ class UserController extends AbstractController
         error_log("Request data: " . json_encode($data));
 
         // Retrieve the user from repository
-        $user = $userRepository->findOneByIdUser($_id_user);
+        $user = $userRepository->findOneByIdUser($_user_id);
         if (!$user) {
-            return $this->json('No user found for _id_user ' . $_id_user, 404);
+            return $this->json('No user found for _user_id ' . $_user_id, 404);
         }
 
         // Initialize a flag to track changes
@@ -346,30 +397,29 @@ class UserController extends AbstractController
         return $this->json([
             'message' => 'User updated successfully',
             'user' => [
-                'id_user' => $user->getIdUser(),
+                '_id_user' => $user->getUserId(),
                 'name_user' => $user->getNameUser(),
                 'email' => $user->getEmail(),
                 'image_link' => $user->getImage_link(),
                 'role' => $user->getRole(),
                 'adress' => $user->getAdress(),
                 'contract' => $user->getContract(),
-                'infos_user' => $user->getInfos_user(), // Assurez-vous d'inclure ce champ
-                '_id_user' => $user->getIdUser(),
+                'infos_user' => $user->getInfos_user()
             ]
         ]);
     }
 
 
 
-    #[Route('/user/{_id_user}', name: 'delete_user', methods: ['DELETE'])]
+    #[Route('/user/{_user_id}', name: 'delete_user', methods: ['DELETE'])]
     public function deleteUser(
-        string $_id_user,
+        string $_user_id,
         UserRepository $userRepository,
         EntityManagerInterface $entityManager
     ): Response {
-        $user = $userRepository->findOneByIdUser($_id_user);
+        $user = $userRepository->findOneByIdUser($_user_id);
         if (!$user) {
-            return $this->json('No user found for id' . $_id_user, 404);
+            return $this->json('No user found for id' . $_user_id, 404);
         }
 
         try {

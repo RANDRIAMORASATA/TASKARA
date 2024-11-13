@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Project;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -12,7 +13,7 @@ use Doctrine\Persistence\ManagerRegistry;
  * @method Project|null findOneBy(array $criteria, array $orderBy = null)
  * @method Project[]    findAll()
  * @method Project[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
- */class ProjectRepository extends ServiceEntityRepository
+ */ class ProjectRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
@@ -25,13 +26,13 @@ use Doctrine\Persistence\ManagerRegistry;
     public function findAllProjects(): array
     {
         return $this->createQueryBuilder('p')
-            ->orderBy('p._id_project', 'ASC') // Correction ici
+            ->orderBy('p._id_project', 'ASC')
             ->getQuery()
             ->getResult()
         ;
     }
 
-   /**
+    /**
      * @param string $_id_project
      * @return Project|null
      */
@@ -44,32 +45,33 @@ use Doctrine\Persistence\ManagerRegistry;
             ->getOneOrNullResult()
         ;
     }
-   
 
 
-     /**
-      * @param array $data
-      * @param bool $flush
-      * @return Project Returns a Project object
+
+    /**
+     * @param array $data
+     * @param bool $flush
+     * @return Project Returns a Project object
      */
 
-    public function saveProject($project)
+    public function saveProject(Project $project): Project
     {
         try {
             $this->getEntityManager()->persist($project);
             $this->getEntityManager()->flush();
-            return true;
+            return $project;
         } catch (\Exception $e) {
-            return false;
+            throw new \RuntimeException('Error saving project: ' . $e->getMessage());
         }
     }
 
-     
 
-     /**
-      * @param string $_id_project
-        * @param array $data
-        * @param bool $flush
+
+
+    /**
+     * @param string $_id_project
+     * @param array $data
+     * @param bool $flush
      * @return Project Returns a Project object
      */
 
@@ -80,5 +82,15 @@ use Doctrine\Persistence\ManagerRegistry;
             $this->getEntityManager()->flush();
         }
     }
-}
 
+
+    public function findAllProjectByUser(string $_user_id): array
+    {
+        return $this->createQueryBuilder('p')
+            ->innerJoin('p.user', 'u')  // 
+            ->where('u._user_id = :_user_id')  //
+            ->setParameter('_user_id', $_user_id)
+            ->getQuery()
+            ->getResult();
+    }
+}

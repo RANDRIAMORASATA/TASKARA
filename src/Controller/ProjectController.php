@@ -14,6 +14,10 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Doctrine\DBAL\Exception as DBALException;
+use Doctrine\ORM\EntityNotFoundException;
+
+
 
 class ProjectController extends AbstractController
 {
@@ -21,140 +25,52 @@ class ProjectController extends AbstractController
     public function getProjects(ProjectRepository $projectRepository): Response
     {
         $projects = $projectRepository->findAllProjects();
+        error_log("Project : " . $projects);
+
         $formattedProjects = array_map(function ($project) {
             return [
                 '_id_project' => $project->getIdProject(),
                 'name_project' => $project->getNameProject(),
                 'description_project' => $project->getDescriptionProject(),
-                'createdAt' => $project->getCreatedAt(),
-                'updatedAt' => $project->getUpdatedAt(),
+                'createdAt' => $project->getCreatedAt()->format('Y-m-d H:i:s'),
+                'updatedAt' => $project->getUpdatedAt() ? $project->getUpdatedAt()->format('Y-m-d H:i:s') : null,
                 'status' => $project->getStatus(),
-                'deadline' => $project->getDeadline(),
+                'deadline' => $project->getDeadline()->format('Y-m-d H:i:s'),
+                '_user_id' => $project->getUser()->getUserId(),
 
+            ];
+        }, $projects);
+        error_log("Project : " . $this->json(['projects' => $formattedProjects]));
+
+        return $this->json(['projects' => $formattedProjects]);
+    }
+    #[Route('/project/{_user_id}', name: 'get_projects_user', methods: ['GET'])]
+    public function getProjectsUser(string $_user_id, ProjectRepository $projectRepository): Response
+    {
+        $projects = $projectRepository->findAllProjectByUser($_user_id);
+
+        if (empty($projects)) {
+            return $this->json(['message' => 'No projects found for this user.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $formattedProjects = array_map(function ($project) {
+            return [
+                '_id_project' => $project->getIdProject(),
+                'name_project' => $project->getNameProject(),
+                'description_project' => $project->getDescriptionProject(),
+                'createdAt' => $project->getCreatedAt()->format('Y-m-d H:i:s'),
+                'updatedAt' => $project->getUpdatedAt() ? $project->getUpdatedAt()->format('Y-m-d H:i:s') : null,
+                'status' => $project->getStatus(),
+                'deadline' => $project->getDeadline()->format('Y-m-d H:i:s'),
+                '_user_id' => $project->getUser()->getUserId()
             ];
         }, $projects);
 
         return $this->json(['projects' => $formattedProjects]);
     }
 
-    #[Route('/project/{_id_project}', name: 'get_project', methods: ['GET'])]
-    public function getOneProject(string $_id_project, ProjectRepository $projectRepository): Response
-    {
-        $project = $projectRepository->findOneByIdProject($_id_project);
-        if (!$project) {
-            return $this->json(['message' => 'Project not found'], Response::HTTP_NOT_FOUND);
-        }
-
-        $formattedProject = [
-            '_id_project' => $project->getIdProject(),
-            'name_project' => $project->getNameProject(),
-            'description_project' => $project->getDescriptionProject(),
-            'createdAt' => $project->getCreatedAt(),
-            'updatedAt' => $project->getUpdatedAt(),
-            'status' => $project->getStatus(),
-            'deadline' => $project->getDeadline(),
-        ];
-
-        return $this->json(['project' => $formattedProject]);
-    }
-
-
-    #[Route('/project', name: 'create_project', methods: ['POST'])]
-    public function createProject(
-        Request $request,
-        EntityManagerInterface $entityManager,
-        ProjectRepository $projectRepository,
-        UserRepository $userRepository,
-        TaskRepository $taskRepository,
-        ValidatorInterface $validator
-    ): Response {
-        if ($request->getContentType() === 'json') {
-            $data = json_decode($request->getContent(), true);
-        } else {
-            $data = $request->request->all();
-        }
-        // Log all request parameters
-        error_log("Request data: " . json_encode($data));
-
-        $project = new Project();
-        $id_project = $data['_id_project'] ?? uniqid();
-        $project->setIdProject($id_project);
-
-        $name_project = $data['name_project'] ?? null;
-        error_log("Name project: " . $name_project);
-        if (empty($name_project)) {
-            return $this->json(['message' => 'Project name is required'], Response::HTTP_BAD_REQUEST);
-        }
-        $project->setNameProject($name_project);
-
-        $description_project = $data['description_project'] ?? null;
-        if (empty($description_project)) {
-            return $this->json(['message' => 'Project description is required'], Response::HTTP_BAD_REQUEST);
-        }
-        $project->setDescriptionProject($description_project);
-
-        $status = $data['status'] ?? null;
-        if (empty($status)) {
-            return $this->json(['message' => 'Project status is required'], Response::HTTP_BAD_REQUEST);
-        }
-        $project->setStatus($status);
-
-        $createdAt = new \DateTimeImmutable();
-        $project->setCreatedAt($createdAt);
-
-        $deadline = new \DateTimeImmutable();
-        if (empty($deadline)) {
-            return $this->json(['message' => 'Project deadline is required'], Response::HTTP_BAD_REQUEST);
-        }
-        $project->setDeadline($deadline);
-
-        $taskIds = $data['tasks'] ?? [];
-        if (!is_array($taskIds)) {
-            return $this->json(['message' => 'Tasks should be an array'], Response::HTTP_BAD_REQUEST);
-        }
-
-        // Process tasks
-        foreach ($taskIds as $taskId) {
-            $task = $taskRepository->find($taskId);
-            if ($task) {
-                $project->addTask($task);
-            }
-        }
-
-        // Validate user ID
-        $userId = $data['_user_id'] ?? null;
-        error_log("User ID from request: " . $userId);
-
-        if (empty($userId)) {
-            return $this->json(['message' => 'User ID is required'], Response::HTTP_BAD_REQUEST);
-        }
-
-        $user = $userRepository->find($userId);
-        if (!$user) {
-            return $this->json(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
-        }
-        $project->setUser($user);
-
-        $errors = $validator->validate($project);
-        if (count($errors) > 0) {
-            return $this->json($errors, Response::HTTP_BAD_REQUEST);
-        }
-
-        try {
-            $projectRepository->saveProject($project);
-        } catch (\Exception $e) {
-            return $this->json(['message' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-
-        return $this->json([
-            'message' => 'Project created successfully',
-            'project' => $project
-        ], Response::HTTP_CREATED);
-    }
-
-
     #[Route('/project/{id_project}', name: 'update_project', methods: ['PUT'])]
-    public function updateProject(
+    public function getOneProject(
         string $id_project,
         Request $request,
         ProjectRepository $projectRepository,
@@ -167,7 +83,6 @@ class ProjectController extends AbstractController
             $data = $request->request->all();
         }
 
-        error_log("Request data: " . json_encode($data));
         $project = $projectRepository->findOneByIdProject($id_project);
         if (!$project) {
             return $this->json(['message' => 'Project not found'], Response::HTTP_NOT_FOUND);
@@ -175,30 +90,26 @@ class ProjectController extends AbstractController
 
         $changesDetected = false;
 
-        // Check and update name
         $name_project = $data['name_project'] ?? null;
-        if ($name_project !== null && $project->getNameProject() !== $name_project) {
+        if ($name_project && $project->getNameProject() !== $name_project) {
             $project->setNameProject($name_project);
             $changesDetected = true;
         }
 
-        // Check and update description
         $description_project = $data['description_project'] ?? null;
-        if ($description_project !== null && $project->getDescriptionProject() !== $description_project) {
+        if ($description_project && $project->getDescriptionProject() !== $description_project) {
             $project->setDescriptionProject($description_project);
             $changesDetected = true;
         }
 
-        // Check and update status
         $status = $data['status'] ?? null;
-        if ($status !== null && $project->getStatus() !== $status) {
+        if ($status && $project->getStatus() !== $status) {
             $project->setStatus($status);
             $changesDetected = true;
         }
 
-        // Check and update deadline
         $deadline = $data['deadline'] ?? null;
-        if ($deadline !== null && $project->getDeadline() !== new \DateTimeImmutable($deadline)) {
+        if ($deadline && $project->getDeadline() !== new \DateTimeImmutable($deadline)) {
             $project->setDeadline(new \DateTimeImmutable($deadline));
             $changesDetected = true;
         }
@@ -207,7 +118,6 @@ class ProjectController extends AbstractController
             return $this->json(['message' => 'No changes detected'], Response::HTTP_BAD_REQUEST);
         }
 
-        // Validate changes
         $errors = $validator->validate($project);
         if (count($errors) > 0) {
             return $this->json($errors, Response::HTTP_BAD_REQUEST);
@@ -225,12 +135,99 @@ class ProjectController extends AbstractController
                 '_id_project' => $project->getIdProject(),
                 'name_project' => $project->getNameProject(),
                 'description_project' => $project->getDescriptionProject(),
-                'createdAt' => $project->getCreatedAt(),
-                'updatedAt' => $project->getUpdatedAt(),
+                'createdAt' => $project->getCreatedAt() ? $project->getCreatedAt()->format('Y-m-d H:i:s') : null,
+                'updatedAt' => $project->getUpdatedAt() ? $project->getUpdatedAt()->format('Y-m-d H:i:s') : null,
+                'deadline' => $project->getDeadline() ? $project->getDeadline()->format('Y-m-d H:i:s') : null,
                 'status' => $project->getStatus(),
-                'deadline' => $project->getDeadline(),
+                '_user_id' => $project->getUser()->getUserId(),
             ]
         ], Response::HTTP_OK);
+    }
+
+    #[Route('/project', name: 'create_project', methods: ['POST'])]
+    public function createProject(
+        Request $request,
+        ProjectRepository $projectRepository,
+        UserRepository $userRepository,
+        TaskRepository $taskRepository,
+        ValidatorInterface $validator
+    ): Response {
+        if ($request->getContentType() === 'json') {
+            $data = json_decode($request->getContent(), true);
+        } else {
+            $data = $request->request->all();
+        }
+
+        $project = new Project();
+        $id_project = $data['_id_project'] ?? uniqid();
+        $project->setIdProject($id_project);
+
+        // Validate required fields
+        if (empty($data['name_project'])) {
+            return $this->json(['message' => 'Project name is required'], Response::HTTP_BAD_REQUEST);
+        }
+        $project->setNameProject($data['name_project']);
+
+        if (empty($data['description_project'])) {
+            return $this->json(['message' => 'Project description is required'], Response::HTTP_BAD_REQUEST);
+        }
+        $project->setDescriptionProject($data['description_project']);
+
+        if (empty($data['status'])) {
+            return $this->json(['message' => 'Project status is required'], Response::HTTP_BAD_REQUEST);
+        }
+        $project->setStatus($data['status']);
+
+        $project->setCreatedAt(new \DateTimeImmutable());
+        $project->setDeadline(new \DateTimeImmutable($data['deadline'] ?? 'now'));
+
+        // Handle tasks
+        foreach ($data['tasks'] ?? [] as $taskId) {
+            $task = $taskRepository->find($taskId);
+            if ($task) {
+                $project->addTask($task);
+            }
+        }
+
+        // Validate user ID
+        if (empty($data['_user_id'])) {
+            return $this->json(['message' => 'User ID is required'], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $user = $userRepository->find($data['_user_id']);
+            if (!$user) {
+                throw new EntityNotFoundException('User not found');
+            }
+            $project->setUser($user);
+        } catch (EntityNotFoundException $e) {
+            return $this->json(['message' => $e->getMessage()], Response::HTTP_NOT_FOUND);
+        }
+
+        // Validate project
+        $errors = $validator->validate($project);
+        if (count($errors) > 0) {
+            return $this->json($errors, Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $savedProject = $projectRepository->saveProject($project);
+
+            return $this->json([
+                'message' => 'Project created successfully',
+                'project' => [
+                    '_id_project' => $savedProject->getIdProject(),
+                    'name_project' => $savedProject->getNameProject(),
+                    'description_project' => $savedProject->getDescriptionProject(),
+                    'createdAt' => $savedProject->getCreatedAt()->format('Y-m-d H:i:s'),
+                    'status' => $savedProject->getStatus(),
+                    'deadline' => $savedProject->getDeadline()->format('Y-m-d H:i:s'),
+                    '_user_id' => $savedProject->getUser()->getUserId(),
+                ]
+            ], Response::HTTP_CREATED);
+        } catch (\Exception $e) {
+            return $this->json(['message' => 'Error saving project: ' . $e->getMessage()], 500);
+        }
     }
 
 

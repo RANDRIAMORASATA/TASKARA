@@ -27,15 +27,12 @@ class Project
     private ?\DateTimeImmutable $deadline = null;
 
 
-    /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\User", inversedBy="projects")
-     * @ORM\JoinColumn(nullable=false)
-     */
-    private User $user;
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'projects')]
+    #[ORM\JoinColumn(name: '_user_id', referencedColumnName: '_user_id')]
+    private ?User $user = null;
 
-    /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Task", mappedBy="project")
-     */
+    // Relation OneToMany vers Task (un projet peut avoir plusieurs tâches)
+    #[ORM\OneToMany(mappedBy: 'project', targetEntity: Task::class)]
     private Collection $tasks;
 
     #[ORM\Column(nullable: true)]
@@ -44,9 +41,24 @@ class Project
     #[ORM\Column(length: 255)]
     private ?string $status = null;
 
+
+
     public function __construct()
     {
         $this->tasks = new ArrayCollection();
+    }
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    /**
+     * @param User|null $user
+     */
+    public function setUser(?User $user): self
+    {
+        $this->user = $user;
+        return $this;
     }
 
     public function getIdProject(): ?string
@@ -120,26 +132,6 @@ class Project
 
         return $this;
     }
-
-    /**
-     * Get the value of user
-     */
-
-    public function getUser(): User
-    {
-        return $this->user;
-    }
-    /**
-     * Set the value of user
-     *
-     * @return  self
-     */
-    public function setUser(User $user): static
-    {
-        $this->user = $user;
-        return $this;
-    }
-
 
     /**
      * Get the value of tasks

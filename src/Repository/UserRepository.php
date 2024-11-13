@@ -6,7 +6,6 @@ use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
-use phpDocumentor\Reflection\Types\Void_;
 
 /**
  * @extends ServiceEntityRepository<User>
@@ -14,6 +13,7 @@ use phpDocumentor\Reflection\Types\Void_;
 class UserRepository extends ServiceEntityRepository
 {
     private $entityManager;
+
     public function __construct(ManagerRegistry $registry, EntityManagerInterface $entityManager)
     {
         parent::__construct($registry, User::class);
@@ -26,24 +26,31 @@ class UserRepository extends ServiceEntityRepository
     public function findAllUsers(): array
     {
         return $this->createQueryBuilder('u')
-            ->orderBy('u._id_user', 'ASC')
+            ->orderBy('u._user_id', 'ASC')
+            ->leftJoin('u.projects', 'p')
+            ->leftJoin('u.tasks', 't')
+            ->addSelect('p', 't')
+            ->orderBy('u._user_id', 'ASC')
             ->getQuery()
-            ->getResult()
-        ;
+            ->getResult();
     }
 
     /**
-     * @param int $_id_user
+     * @param string $_user_id
      * @return User|null Returns a User object or null if not found
      */
-    public function findOneByIdUser(string $_id_user)
+    public function findOneByIdUser(string $_user_id)
     {
         return $this->createQueryBuilder('u')
-            ->where('u._id_user = :_id_user') // Use the correct field name
-            ->setParameter('_id_user', $_id_user)
+            ->where('u._user_id = :_user_id')
+            ->setParameter('_user_id', $_user_id)
+            ->leftJoin('u.projects', 'p')
+            ->leftJoin('u.tasks', 't')
+            ->addSelect('p', 't')
             ->getQuery()
             ->getOneOrNullResult();
     }
+
     /**
      * @param string $email
      * @return User|null Returns a User object or null if not found
@@ -53,6 +60,9 @@ class UserRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('u')
             ->where('u.email = :email') // email
             ->setParameter('email', $email)
+            ->leftJoin('u.projects', 'p')
+            ->leftJoin('u.tasks', 't')
+            ->addSelect('p', 't')
             ->getQuery()
             ->getOneOrNullResult();
     }
@@ -62,7 +72,6 @@ class UserRepository extends ServiceEntityRepository
      * @param array $data
      * @param bool $flush
      * @return User
-     * 
      */
     public function saveUser($user)
     {
@@ -76,11 +85,10 @@ class UserRepository extends ServiceEntityRepository
         }
     }
 
-
     /**
      * Deletes a User entity from the database.
      *
-     * @param int $_id_user The ID of the User to delete.
+     * @param User $user
      * @param bool $flush Whether to flush changes immediately.
      * @return void
      */
